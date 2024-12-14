@@ -74,6 +74,16 @@ app.get("/api/ratings", (req, res) => {
   });
 });
 
+app.get('/api/ratings', async (req, res) => {
+    try {
+      const ratings = await db.all('SELECT * FROM ratings');
+      res.json(ratings);
+    } catch (error) {
+      res.status(500).json({ error: 'Error fetching ratings' });
+    }
+  });
+
+  
 // ==============================
 // Start Server
 // ==============================
