@@ -21,24 +21,27 @@ const db = new sqlite3.Database("./ratings.db", (err) => {
   }
 });
 
-// Create "ratings" table if it doesn't exist
-db.run(
-  `CREATE TABLE IF NOT EXISTS ratings (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    rating INTEGER NOT NULL,
-    feedback TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`,
-  (err) => {
-    if (err) {
-      console.error("Error creating table:", err.message);
-    } else {
-      console.log("Table 'ratings' is ready.");
+// Use db.serialize() to ensure initialization tasks run sequentially
+db.serialize(() => {
+  // Create "ratings" table if it doesn't exist
+  db.run(
+    `CREATE TABLE IF NOT EXISTS ratings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      rating INTEGER NOT NULL,
+      feedback TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    (err) => {
+      if (err) {
+        console.error("Error creating table:", err.message);
+      } else {
+        console.log("Table 'ratings' is ready.");
+      }
     }
-  }
-);
+  );
+});
 
 // ==============================
 // API Routes
@@ -63,9 +66,11 @@ app.post("/api/rate", (req, res) => {
   });
 });
 
-// Route to fetch all ratings (optional for admin view)
+// Route to fetch all ratings
 app.get("/api/ratings", (req, res) => {
-  db.all(`SELECT * FROM ratings ORDER BY created_at DESC`, [], (err, rows) => {
+  const query = `SELECT * FROM ratings ORDER BY created_at DESC`;
+
+  db.all(query, [], (err, rows) => {
     if (err) {
       console.error("Error fetching data:", err.message);
       return res.status(500).json({ error: "Failed to retrieve ratings." });
@@ -74,16 +79,6 @@ app.get("/api/ratings", (req, res) => {
   });
 });
 
-app.get('/api/ratings', async (req, res) => {
-    try {
-      const ratings = await db.all('SELECT * FROM ratings');
-      res.json(ratings);
-    } catch (error) {
-      res.status(500).json({ error: 'Error fetching ratings' });
-    }
-  });
-
-  
 // ==============================
 // Start Server
 // ==============================
